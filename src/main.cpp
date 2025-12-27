@@ -1,16 +1,19 @@
-#include "chitr/RootFrame.h"
+#include "chitr/MainFrame.h"
 #include "chitr/ChitrLogger.h"
 #include <wx/wx.h>
-using namespace std;
 
 class Chitr : public wxApp {
 public:
     virtual bool OnInit() wxOVERRIDE {
         LOG_INFO("Application Initializing");
-        RootFrame *rootFrame = new RootFrame("Chitr : Media Player");
-        rootFrame->Show(true);
+        MainFrame *mainFrame = new MainFrame("Chitr : Media Player");
+        mainFrame->Show(true);
         return true;
     }
 };
 
-wxIMPLEMENT_APP_CONSOLE(Chitr);
+#ifdef _WIN32
+    wxIMPLEMENT_APP_CONSOLE(Chitr);
+#else
+    wxIMPLEMENT_APP(Chitr);
+#endif

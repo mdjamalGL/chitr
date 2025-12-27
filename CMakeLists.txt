@@ -18,11 +18,13 @@ endif()
 
 set(SOURCES
     src/main.cpp
-    src/RootFrame.cpp
-    src/ImagePlayback.cpp
-    src/VideoPlayback.cpp
-    src/Resource.cpp
+    src/MainFrame.cpp
+    src/media/ImagePanel.cpp
+    src/media/ImageContext.cpp
+    src/media/VideoPanel.cpp
+    src/media/VideoContext.cpp
     src/utils/ChitrLogger.cpp
+    src/utils/Resource.cpp
 )
 
 add_executable(PhotoViewer ${SOURCES})

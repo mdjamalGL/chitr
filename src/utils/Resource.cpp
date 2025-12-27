@@ -1,6 +1,8 @@
 #include <wx/wx.h>
 #include <wx/graphics.h>
 #include <wx/window.h>
+#include <wx/dcmemory.h>
+#include <memory>
 #include "chitr/Resource.h"
 #include "chitr/ChitrLogger.h"
 #include "IconsMaterialDesign.h"
@@ -28,7 +30,6 @@ Resource::Resource()
 
 wxBitmap Resource::GetIconAsBitmap(const char* utf8IconCode, int size, const wxColour& fgColor) {
     
-    LOG_INFO("Getting Icons: %s", utf8IconCode);
     wxImage img(size, size);
     img.InitAlpha();
     unsigned char* alpha = img.GetAlpha();

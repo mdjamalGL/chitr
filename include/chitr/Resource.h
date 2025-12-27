@@ -1,14 +1,6 @@
 #pragma once
 #include <wx/wx.h>
 
-/**
- * Resource class contains all the assets like images,
- * icons, primary and secondary colours that are used in the
- * application, they are defined one time in the RootFrame class's
- * member
- * All members are public because the resources will be called from
- * non friend classes
- */
 class Resource
 {
     public :

@@ -5,12 +5,7 @@ Commands :
 conan install . --build=missing
 ```
 
-## CMAKE
-Inside ``build`` folder
+## Build
 ```shell
-cmake .. -DCMAKE_TOOLCHAIN_FILE="Release/generators/conan_toolchain.cmake" -DCMAKE_BUILD_TYPE=Release
-```
-for each subsequent changes
-```shell
-cmake --build . 
+conan build .
 ```
