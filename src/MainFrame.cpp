@@ -14,9 +14,23 @@ MainFrame::MainFrame(const wxString &title) : wxFrame(NULL, wxID_ANY, title)
    
     LoadEmbeddedFont();
     LoadImageHandlers();
-    
+
     assets = std::make_shared<Resource>();
-    // this->SetIcon(wxICON(photo));
+    wxString exePath = wxStandardPaths::Get().GetExecutablePath();
+    wxString exeDir = wxFileName(exePath).GetPath();
+
+    wxString iconPath = exeDir + "/Assets/MainIcon.png";
+
+    if (wxFileName::FileExists(iconPath)) {
+        wxIcon appIcon;
+        appIcon.LoadFile(iconPath, wxBITMAP_TYPE_PNG);
+        
+        this->SetIcon(appIcon);
+        LOG_INFO("App icon loaded from: %s", iconPath.ToStdString());
+    } else {
+        LOG_ERROR("Could not find icon at: %s", iconPath.ToStdString());
+    }
+
 
     notebook        = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
 

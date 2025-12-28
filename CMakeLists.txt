@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(PhotoViewer)
+project(Chitr)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,31 +27,42 @@ set(SOURCES
     src/utils/Resource.cpp
 )
 
-add_executable(PhotoViewer ${SOURCES})
+add_executable(Chitr ${SOURCES})
 
 if(MSVC)
-    set_target_properties(PhotoViewer PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
+    set_target_properties(Chitr PROPERTIES LINK_FLAGS "/SUBSYSTEM:CONSOLE")
 endif()
 
-target_include_directories(PhotoViewer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(Chitr PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(PhotoViewer PRIVATE 
+target_link_libraries(Chitr PRIVATE 
     ${wxWidgets_LIBRARIES} 
     iconfontcppheaders::iconfontcppheaders
 )
 
-target_compile_options(PhotoViewer PRIVATE
+target_compile_options(Chitr PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-w>
     $<$<CXX_COMPILER_ID:MSVC>:/W0>
 )
 
 set(FONT_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/assets/font_ttf/material_v1.ttf")
-add_custom_command(TARGET PhotoViewer POST_BUILD
+add_custom_command(TARGET Chitr POST_BUILD
    
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PhotoViewer>/Fonts"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Chitr>/Fonts"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${FONT_SOURCE}"
-    "$<TARGET_FILE_DIR:PhotoViewer>/Fonts/material_v1.ttf"
+    "$<TARGET_FILE_DIR:Chitr>/Fonts/material_v1.ttf"
     
     COMMENT "Copying Fonts to output directory"
+)
+
+set(ICON_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/assets/MainIcon.png")
+add_custom_command(TARGET Chitr POST_BUILD
+   
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Chitr>/Assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${ICON_SOURCE}"
+    "$<TARGET_FILE_DIR:Chitr>/Assets/MainIcon.png"
+    
+    COMMENT "Copying Icon to output directory"
 )

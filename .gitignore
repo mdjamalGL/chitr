@@ -12,6 +12,7 @@ out/
 # CMake
 CMakeFiles/
 CMakeCache.txt
+CMakeListsBundle.txt
 cmake_install.cmake
 *.cmake
 Makefile
