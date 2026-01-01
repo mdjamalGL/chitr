@@ -19,11 +19,8 @@ MainFrame::MainFrame(const wxString &title) : wxFrame(NULL, wxID_ANY, title)
 
     assets = std::make_shared<Resource>();
     
-
-
     notebook        = new wxNotebook(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP);
 
-    
     MediaPanel      *imagePanel = new ImagePanel(this, notebook, assets);
     MediaPanel      *videoPanel = new VideoPanel(this, notebook, assets);
     

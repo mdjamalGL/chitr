@@ -98,3 +98,17 @@ void VideoContext::setVolume(int newVolume) {
         volume = newVolume;
     }
 }
+
+void VideoContext::setTotalPlaybackTime(long long duration) {
+
+    totalPlaybackTime.setTime(duration);
+    LOG_INFO("Total Playback Time : %d miliseconds [%s]", duration, static_cast<std::string>(totalPlaybackTime));
+}
+
+long long VideoContext::getTotalPlaybackTimeInMiliSecond() {
+    return totalPlaybackTime.getMiliseconds();
+}
+
+std::string VideoContext::getTotalPlaybackTimeString() {
+    return totalPlaybackTime;
+}

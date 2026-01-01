@@ -2,6 +2,7 @@
 #include "chitr/ChitrLogger.h"
 #include "media/VideoContext.h"
 #include "chitr/Resource.h"
+#include "component/RoundedText.h"
 #include <memory>
 #include <vector>
 #include <optional>
@@ -42,23 +43,43 @@ VideoPanel::VideoPanel(wxFrame *mFrame, wxNotebook *notebook, std::shared_ptr<Re
     controlPanel->SetFocus();
 }
 
+VideoPanel::~VideoPanel() {
+    
+    if (playbackTimer) {
+        playbackTimer->Stop(); 
+        playbackTimer->Unbind(wxEVT_TIMER, &VideoPanel::playbackLengthHandler, this);
+        
+        delete playbackTimer;
+        playbackTimer = nullptr;
+    }
+
+    if (context) {
+        delete context;
+        context = nullptr;
+    }
+}
+
 void VideoPanel::init() {
     
     visualPanel         = new wxPanel(rootPanel, wxID_ANY);
     controlPanel        = new wxPanel(rootPanel, wxID_ANY);
     mediaPlayer         = new wxMediaCtrl(visualPanel, wxID_ANY);
 
-    rootSizer           = new wxBoxSizer(wxVERTICAL);
-    visualSizer         = new wxBoxSizer(wxHORIZONTAL);
-    controlSizer        = new wxBoxSizer(wxHORIZONTAL);
-    
+    rootSizer                   = new wxBoxSizer(wxVERTICAL);
+    visualSizer                 = new wxBoxSizer(wxHORIZONTAL);
+    controlSizer                = new wxBoxSizer(wxVERTICAL);
+    controlPanelButtonRowSizer  = new wxBoxSizer(wxHORIZONTAL);
+    controlPanelPBSliderSizer   = new wxBoxSizer(wxHORIZONTAL);
+
     uploadButton        = new wxButton(controlPanel, wxID_ANY, "Upload Video/Audio", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     playPauseButton     = new wxButton(controlPanel, wxID_ANY, "Play", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE); 
     previousButton      = new wxButton(controlPanel, wxID_ANY, "Previous Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
-    stopButton          = new wxButton(controlPanel, wxID_ANY, "Stop", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     nextButton          = new wxButton(controlPanel, wxID_ANY, "Next Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     volumeSlider        = new wxGauge(controlPanel, wxID_ANY, 100, wxDefaultPosition, wxSize(70,2), wxGA_HORIZONTAL | wxGA_SMOOTH);
     volumeButton        = new wxButton(controlPanel, wxID_ANY, "Volume Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
+    playbackSlider      = new wxGauge(controlPanel, wxID_ANY, 10000, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL | wxGA_SMOOTH);
+    playbackTimer       = new wxTimer();
+    playbackTimeText    = new RoundedText(controlPanel, wxID_ANY, "00:00 / 00:00", assets->getSecondaryColour(), *wxWHITE, 20.0);
 
     LOG_INFO("VideoPanel Initialization completed");
 }
@@ -72,24 +93,31 @@ void VideoPanel::setSizers() {
     uploadButton->SetBitmap(assets->getUploadIcon());
     playPauseButton->SetBitmap(assets->getPlayIcon());
     previousButton->SetBitmap(assets->getPreviousIcon());
-    stopButton->SetBitmap(assets->getStopIcon());
     nextButton->SetBitmap(assets->getNextIcon());
 
     visualSizer->AddStretchSpacer(1);
     visualSizer->Add(mediaPlayer, 4, wxEXPAND | wxALL, 5);
     visualSizer->AddStretchSpacer(1);
 
-    controlSizer->Add(uploadButton, 0, wxCENTER | wxALL, 5);
-    controlSizer->AddStretchSpacer(1);
-    controlSizer->Add(playPauseButton, 0, wxCENTER | wxALL, 5);
-    controlSizer->AddSpacer(6);
-    controlSizer->Add(previousButton, 0, wxCENTER | wxALL, 5);
-    controlSizer->Add(stopButton, 0, wxCENTER | wxALL, 5);
-    controlSizer->Add(nextButton, 0, wxCENTER | wxALL, 5);
-    controlSizer->AddStretchSpacer(1);
-    controlSizer->Add(volumeButton, 0, wxEXPAND | wxALL, 5);
-    controlSizer->Add(volumeSlider, 0, wxEXPAND | wxALL, 5);
+    controlPanelButtonRowSizer->AddStretchSpacer(1);
+    controlPanelButtonRowSizer->Add(playPauseButton, 0, wxCENTER | wxALL, 5);
+    controlPanelButtonRowSizer->Add(playbackTimeText, 0, wxCENTER | wxALL, 5);
+    controlPanelButtonRowSizer->AddStretchSpacer(15);
+    controlPanelButtonRowSizer->Add(previousButton, 0, wxCENTER | wxALL, 5);
+    controlPanelButtonRowSizer->Add(uploadButton, 0, wxCENTER | wxALL, 5);
+    controlPanelButtonRowSizer->Add(nextButton, 0, wxCENTER | wxALL, 5);
+    controlPanelButtonRowSizer->AddStretchSpacer(15);
+    controlPanelButtonRowSizer->Add(volumeButton, 0, wxEXPAND | wxALL, 5);
+    controlPanelButtonRowSizer->Add(volumeSlider, 0, wxEXPAND | wxALL, 5);
+    controlPanelButtonRowSizer->AddStretchSpacer(1);
     
+    controlPanelPBSliderSizer->AddStretchSpacer(1); 
+    controlPanelPBSliderSizer->Add(playbackSlider, 38, wxEXPAND | wxALL, 0);
+    controlPanelPBSliderSizer->AddStretchSpacer(1);
+
+    controlSizer->Add(controlPanelPBSliderSizer, 0, wxEXPAND | wxTOP, 10); 
+    controlSizer->Add(controlPanelButtonRowSizer, 0, wxEXPAND | wxBOTTOM, 5);
+
     controlPanel->SetSizer(controlSizer);
     controlSizer->SetSizeHints(mainFrame);
 
@@ -108,25 +136,31 @@ void VideoPanel::setSizers() {
 
 void VideoPanel::setBindings() {  
 
+    rootPanel->Bind(wxEVT_DESTROY, &VideoPanel::OnWindowDestroy, this);
     uploadButton->Bind(wxEVT_BUTTON, &VideoPanel::uploadHandler, this);
     playPauseButton->Bind(wxEVT_BUTTON, &VideoPanel::playPauseHandler, this);
-    stopButton->Bind(wxEVT_BUTTON, &VideoPanel::stopHandler, this);
     nextButton->Bind(wxEVT_BUTTON, &VideoPanel::nextHandler, this);
     previousButton->Bind(wxEVT_BUTTON, &VideoPanel::previousHandler, this);
-    mediaPlayer->Bind(wxEVT_MEDIA_LOADED, &VideoPanel::playPauseHandler, this);
+    mediaPlayer->Bind(wxEVT_MEDIA_LOADED, &VideoPanel::mediaLoadedHandler, this);
+    mediaPlayer->Bind(wxEVT_MEDIA_STOP, &VideoPanel::mediaEndedHandler, this);
     volumeSlider->Bind(wxEVT_LEFT_DOWN, &VideoPanel::volumeHandler, this);
     volumeSlider->Bind(wxEVT_MOTION, &VideoPanel::volumeHandler, this);
     volumeButton->Bind(wxEVT_BUTTON, &VideoPanel::muteHandler, this);
-    
+    playbackSlider->Bind(wxEVT_LEFT_DOWN, &VideoPanel::seekHandler, this);
+    playbackSlider->Bind(wxEVT_MOTION, &VideoPanel::seekHandler, this);
+    playbackTimer->Bind(wxEVT_TIMER, &VideoPanel::playbackLengthHandler, this);
+
     std::vector<wxAcceleratorEntry> acceleratorEntry = getAcceleratorEntries();
     wxAcceleratorTable acceleratorTable(acceleratorEntry.size(), acceleratorEntry.data());
     rootPanel->SetAcceleratorTable(acceleratorTable);
     rootPanel->Bind(wxEVT_MENU, &VideoPanel::alphaPressHandler, this, ID_OFFSET_ALPHA, ID_OFFSET_ALPHA + 25);
     rootPanel->Bind(wxEVT_MENU, &VideoPanel::numPressHandler, this, ID_OFFSET_NUM, ID_OFFSET_NUM + 9);
-    rootPanel->Bind(wxEVT_MENU, &VideoPanel::arrowPressHandler, this, ID_ARROW_UP);
-    rootPanel->Bind(wxEVT_MENU, &VideoPanel::arrowPressHandler, this, ID_ARROW_DOWN);
-    rootPanel->Bind(wxEVT_MENU, &VideoPanel::arrowPressHandler, this, ID_ARROW_LEFT);
-    rootPanel->Bind(wxEVT_MENU, &VideoPanel::arrowPressHandler, this, ID_ARROW_RIGHT);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_ARROW_UP);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_ARROW_DOWN);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_ARROW_LEFT);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_ARROW_RIGHT);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_SPACE);
+    rootPanel->Bind(wxEVT_MENU, &VideoPanel::keyPressHandler, this, ID_ENTER);
 }
 
 std::vector<wxAcceleratorEntry> VideoPanel::getAcceleratorEntries() {
@@ -144,6 +178,8 @@ std::vector<wxAcceleratorEntry> VideoPanel::getAcceleratorEntries() {
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_DOWN, ID_ARROW_DOWN));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_LEFT, ID_ARROW_LEFT));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_RIGHT, ID_ARROW_RIGHT));
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_RETURN, ID_ENTER));
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_SPACE, ID_SPACE));
 
     return entries;
 }
@@ -152,18 +188,17 @@ void VideoPanel::setCursors() {
 
     uploadButton->SetCursor(wxCursor(wxCURSOR_HAND));
     playPauseButton->SetCursor(wxCursor(wxCURSOR_HAND));
-    stopButton->SetCursor(wxCursor(wxCURSOR_HAND));
     nextButton->SetCursor(wxCursor(wxCURSOR_HAND));
     previousButton->SetCursor(wxCursor(wxCURSOR_HAND));
     volumeButton->SetCursor(wxCursor(wxCURSOR_HAND));
     volumeSlider->SetCursor(wxCursor(wxCURSOR_HAND));
+    playbackSlider->SetCursor(wxCursor(wxCURSOR_HAND));
 }
 
 void VideoPanel::setToolTips() {
 
     uploadButton->SetToolTip("Upload");
     playPauseButton->SetToolTip("Play");
-    stopButton->SetToolTip("Stop");
     nextButton->SetToolTip("Next");
     previousButton->SetToolTip("Previous");
     volumeButton->SetToolTip("Mute");
@@ -206,30 +241,55 @@ void VideoPanel::updateMediaPlayer(wxString videoFilePath) {
 
     context->setIsPlaying(false);
     mediaPlayer->Load(videoFilePath);
-    LOG_INFO("Time in Milisecond : %d",mediaPlayer->Length());
     LOG_INFO("Updated Media Player with %s", videoFilePath);
 }
 
+void VideoPanel::mediaLoadedHandler(wxCommandEvent &event) {
+
+    context->setTotalPlaybackTime((long long)mediaPlayer->Length());
+    wxCommandEvent newEvent(wxEVT_BUTTON, event.GetId());
+    playPauseHandler(newEvent);
+    playbackTimer->Start(30);
+}
+
+void VideoPanel::mediaEndedHandler(wxCommandEvent &event) {
+
+    wxCommandEvent newEvent(wxEVT_BUTTON, event.GetId());
+    playPauseHandler(newEvent);
+    playbackTimer->Stop();
+}
+
 void VideoPanel::playPauseHandler(wxCommandEvent &event) {
-    LOG_INFO("Time in Milisecond : %d",(long long)mediaPlayer->Length());
-    if (mediaPlayer->Tell() == 0 || !context->getIsPlaying()) {
+
+    if (!context->getIsPlaying()) {
         mediaPlayer->Play();
         context->setIsPlaying(true);
+        playbackTimer->Start(30);
         playPauseButton->SetBitmap(assets->getPauseIcon());
     } else {
         mediaPlayer->Pause();
         context->setIsPlaying(false);
+        playbackTimer->Stop();
         playPauseButton->SetBitmap(assets->getPlayIcon());
     }
 }
 
-void VideoPanel::stopHandler(wxCommandEvent &event) {
+void VideoPanel::playbackLengthHandler(wxTimerEvent &event) {
 
-    context->setIsPlaying(false);
-    mediaPlayer->Stop();
+    if (!context || !playbackTimer || !mediaPlayer || !playbackSlider || !playbackTimeText) {
+        return;
+    }
 
-    playPauseButton->SetBitmap(assets->getPlayIcon());
-    LOG_INFO("Playback Stopped");
+    long long totalMiliseconds = context->getTotalPlaybackTimeInMiliSecond();
+    if (totalMiliseconds <= 0) return; 
+
+    long long timeCompletedMiliseconds = mediaPlayer->Tell();
+    std::string totalTime = context->getTotalPlaybackTimeString(); 
+    int percentDone = (timeCompletedMiliseconds * 10000 / totalMiliseconds);
+    std::string timeCompleted = CTime::timeString(timeCompletedMiliseconds) + " / " + totalTime;
+     
+    if (playbackSlider) playbackSlider->SetValue(percentDone);
+    if (playbackTimeText) playbackTimeText->SetLabel(timeCompleted);
 }
 
 void VideoPanel::nextHandler(wxCommandEvent &event) {
@@ -276,6 +336,28 @@ void VideoPanel::volumeHandler(wxMouseEvent& event) {
         context->setVolume(value);
         volumeSlider->SetValue(context->getVolume());
         mediaPlayer->SetVolume(double(context->getVolume())/100.0);  
+    }
+}
+
+void VideoPanel::seekHandler(wxMouseEvent& event) {
+    if (event.LeftIsDown()) {
+        int width = playbackSlider->GetSize().GetWidth();
+        int x = event.GetX();
+        int value = (x * playbackSlider->GetRange()) / width;
+        
+        if (value < 0) value = 0;
+        if (value > playbackSlider->GetRange()) value = playbackSlider->GetRange();
+        
+        long long timeToSeek = (context->getTotalPlaybackTimeInMiliSecond() * value)/10000;
+
+        playbackSlider->SetValue(value);
+        mediaPlayer->Seek(timeToSeek);
+        
+        if(!context->getIsPlaying()) {
+            wxCommandEvent newEvent(wxEVT_BUTTON, event.GetId());
+            playPauseHandler(newEvent);
+        }
+        LOG_INFO("Seek Handler Called for Time : %s", CTime::timeString(timeToSeek));
     }
 }
 
@@ -343,7 +425,7 @@ void VideoPanel::numPressHandler(wxCommandEvent& event) {
     LOG_INFO("Number Key Event Raised : %d", numberPressed);
 }
 
-void VideoPanel::arrowPressHandler(wxCommandEvent& event) {
+void VideoPanel::keyPressHandler(wxCommandEvent& event) {
     
     int arrowId = event.GetId();
     switch (arrowId) {
@@ -363,5 +445,34 @@ void VideoPanel::arrowPressHandler(wxCommandEvent& event) {
 
             break;
         }
+        case ID_SPACE:
+        case ID_ENTER: {
+            wxCommandEvent newEvent(wxEVT_BUTTON, event.GetId());
+            playPauseHandler(newEvent);
+            break;
+        }
     }
 }
+
+void VideoPanel::OnWindowDestroy(wxWindowDestroyEvent& event) {
+
+    if (event.GetEventObject() == rootPanel) {
+        LOG_INFO("RootPanel is being destroyed - cleaning up UI references");
+
+        if (playbackTimer) {
+            playbackTimer->Stop();
+        }
+
+        playbackSlider = nullptr;
+        volumeSlider = nullptr;
+        playbackTimeText = nullptr;
+        mediaPlayer = nullptr;
+        
+        rootPanel->Unbind(wxEVT_DESTROY, &VideoPanel::OnWindowDestroy, this);
+    }
+    event.Skip();
+}
+
+
+
+

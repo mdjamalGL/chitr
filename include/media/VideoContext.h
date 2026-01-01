@@ -3,12 +3,14 @@
 #include <wx/wx.h>
 #include <wx/filename.h>
 #include <media/MediaContext.h>
+#include <chitr/CTime.h>
 
 class VideoContext : public MediaContext {
 
 private:
     bool            isPlaying;
     int             volume;
+    CTime           totalPlaybackTime;
 
 protected:
     bool setCurrentIndex(int newIndex) override;
@@ -16,6 +18,8 @@ protected:
 public:
     VideoContext();
     std::optional<wxString> getVideoByIndex(int index);
+    long long       getTotalPlaybackTimeInMiliSecond();
+    std::string     getTotalPlaybackTimeString();
     int     getListSize() override;
     int     getCurrentIndex() override;
     bool    next() override;
@@ -26,4 +30,5 @@ public:
     void    setIsPlaying(bool);
     int     getVolume();
     void    setVolume(int);
+    void    setTotalPlaybackTime(long long);
 };

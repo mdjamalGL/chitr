@@ -1,12 +1,13 @@
 #pragma once
+#include <memory>
 #include <wx/wx.h>
 #include <wx/notebook.h>
 #include <wx/event.h>
 #include <wx/mediactrl.h>
 #include "media/MediaPanel.h"
 #include "media/VideoContext.h"
-#include <memory>
 #include "chitr/Resource.h"
+#include "component/RoundedText.h"
 
 #define ID_OFFSET_ALPHA   3000  
 #define ID_OFFSET_NUM     4000 
@@ -14,6 +15,8 @@
 #define ID_ARROW_DOWN     5002
 #define ID_ARROW_LEFT     5003
 #define ID_ARROW_RIGHT    5004
+#define ID_SPACE          6000
+#define ID_ENTER          6001
 
 
 class VideoPanel: public MediaPanel {
@@ -27,31 +30,40 @@ protected:
     virtual void setToolTips() override;
 
 private:
+    void OnWindowDestroy(wxWindowDestroyEvent& event);
     std::vector<wxAcceleratorEntry> getAcceleratorEntries();
     void uploadHandler(wxCommandEvent &event);
     void updateMediaPlayer(wxString videoFilePath);
+    void mediaLoadedHandler(wxCommandEvent &event);
+    void mediaEndedHandler(wxCommandEvent &event);
     void playPauseHandler(wxCommandEvent &event);
-    void stopHandler(wxCommandEvent &event);
     void nextHandler(wxCommandEvent &event);
     void previousHandler(wxCommandEvent &event);
     void volumeHandler(wxMouseEvent& event);
+    void seekHandler(wxMouseEvent& event);
     void muteHandler(wxCommandEvent &event);
+    void playbackLengthHandler(wxTimerEvent &event);
     void alphaPressHandler(wxCommandEvent& event);
     void numPressHandler(wxCommandEvent& event);
-    void arrowPressHandler(wxCommandEvent& event);
+    void keyPressHandler(wxCommandEvent& event);
 
     wxMediaCtrl     *mediaPlayer;
     wxGauge         *volumeSlider;
+    wxGauge         *playbackSlider;
     wxButton        *uploadButton;
-    wxButton        *stopButton;
     wxButton        *nextButton;
     wxButton        *previousButton;
     wxButton        *playPauseButton;
     wxButton        *volumeButton;
+    wxBoxSizer      *controlPanelButtonRowSizer;
+    wxBoxSizer      *controlPanelPBSliderSizer;
+    wxTimer         *playbackTimer;
+    RoundedText     *playbackTimeText;
     VideoContext    *context;
 
 public:
     VideoPanel(wxFrame *, wxNotebook *, std::shared_ptr<Resource>);
+    ~VideoPanel();
     wxPanel *getRootPanel() override;
     
 };
