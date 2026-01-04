@@ -20,8 +20,22 @@ class MainFrame;
 
 class MediaPanel {
 
+private :
+    std::shared_ptr<MediaContext> context;
+
 protected :
-    virtual std::vector<CFile *> GetFilesInDirectory(const wxString& dirPath) = 0;
+    std::vector<CFile *> GetFilesInDirectory(const wxString& dirPath);
+    void setBaseContext(std::shared_ptr<MediaContext> newContext);
+
+    template <typename T, typename EventType>
+    void dispatchEvent(void (T::*handler)(EventType&), int id = wxID_ANY) {
+        EventType event;
+        event.SetId(id);
+        (static_cast<T*>(this)->*handler)(event);
+    }
+
+    virtual void OnWindowDestroy(wxWindowDestroyEvent& event) = 0;
+    virtual std::vector<wxAcceleratorEntry> getAcceleratorEntries() = 0;
     virtual void init() = 0;
     virtual void setSizers() = 0;
     virtual void setBindings() = 0;
@@ -38,7 +52,7 @@ protected :
     std::shared_ptr<Resource>   assets;
 
 public :
-    virtual wxPanel *getRootPanel() const = 0;
-    virtual const std::vector<wxString> getStatusBarData() const = 0;
+    wxPanel *getRootPanel() const;
+    const std::vector<wxString> getStatusBarData() const;
 
 };

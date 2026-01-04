@@ -20,6 +20,7 @@ set(SOURCES
     src/main.cpp
     src/MainFrame.cpp
     src/media/MediaContext.cpp
+    src/media/MediaPanel.cpp
     src/media/ImagePanel.cpp
     src/media/ImageContext.cpp
     src/media/VideoPanel.cpp

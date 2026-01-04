@@ -9,7 +9,7 @@ ImageContext::ImageContext() {
     LOG_INFO("Creating Image Context");
     currentIndex = 0;
     slideShowFlag = false;
-    supportedFormats.insert({ _T("jpg"), _T("jpeg"),
+    supportedFormats.insert({_T("jpg"), _T("jpeg"),
                             _T("png"), _T("gif"),
                             _T("pcx"), _T("pnm"),
                             _T("tiff"), _T("tif"),

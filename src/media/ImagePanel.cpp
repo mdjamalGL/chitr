@@ -18,7 +18,11 @@ ImagePanel::ImagePanel(MainFrame *mFrame, wxNotebook *notebook, std::shared_ptr<
     try {
         rootPanel   = new wxPanel(notebook);
         assets      = (resourceAsset);
-        context     = new ImageContext();
+
+        std::shared_ptr<ImageContext> sharedCtx = std::make_shared<ImageContext>();
+        setBaseContext(sharedCtx);
+        context = sharedCtx.get();
+
         mainFrame   = mFrame;
 
         init();
@@ -263,29 +267,6 @@ void ImagePanel::previousHandler(wxCommandEvent &event) {
     }
 }
 
-std::vector<CFile *> ImagePanel::GetFilesInDirectory(const wxString &dirPath) {
-
-    std::vector<CFile *> fileList;
-    wxDir directory(dirPath);
-
-    if (directory.IsOpened()) {
-
-        wxString filename;
-        bool hasFiles = directory.GetFirst(&filename, wxEmptyString, wxDIR_FILES);
-        while (hasFiles) {
-
-            CFile *file = new CFile(dirPath, filename, wxPATH_NATIVE);
-            if(context->supportedFormats.count(file->getExt()) > 0){
-                fileList.push_back(file);
-            }
-            hasFiles = directory.GetNext(&filename);
-        }
-    }
-    return fileList;
-}
-
-wxPanel *ImagePanel::getRootPanel() const { return rootPanel; }
-
 void ImagePanel::alphaPressHandler(wxCommandEvent& event) {
 
     char alphabetPressed = 'A' + (event.GetId() - ID_OFFSET_ALPHA);
@@ -324,8 +305,7 @@ void ImagePanel::keyPressHandler(wxCommandEvent& event) {
             break;
         }
         case ID_SPACE: {
-            wxCommandEvent newEvent(wxEVT_BUTTON, event.GetId());
-            slideshowOpenClose(newEvent);
+            dispatchEvent(&ImagePanel::slideshowHandler);
             break;
         }
     }
@@ -344,5 +324,3 @@ void ImagePanel::OnWindowDestroy(wxWindowDestroyEvent& event) {
     }
     event.Skip();
 }
-
-const std::vector<wxString> ImagePanel::getStatusBarData() const { return context->getMetaData(); }

@@ -13,16 +13,15 @@
 class ImagePanel: public MediaPanel {
 
 protected:
-    virtual std::vector<CFile *> GetFilesInDirectory(const wxString& dirPath) override;
     virtual void init() override;
     virtual void setSizers() override;
     virtual void setBindings() override;
     virtual void setCursors() override;
     virtual void setToolTips() override;
+    virtual void OnWindowDestroy(wxWindowDestroyEvent& event) override;
+    virtual std::vector<wxAcceleratorEntry> getAcceleratorEntries() override;
 
 private:
-    void OnWindowDestroy(wxWindowDestroyEvent& event);
-    std::vector<wxAcceleratorEntry> getAcceleratorEntries();
     void uploadHandler(wxCommandEvent &event);
     void updateImageViewer(wxString imageFilePath);
     void slideshowOpenClose(wxCommandEvent &event);
@@ -44,6 +43,4 @@ private:
 public:
     ImagePanel(MainFrame *, wxNotebook *, std::shared_ptr<Resource>);
     ~ImagePanel();
-    wxPanel *getRootPanel() const override;
-    const std::vector<wxString> getStatusBarData() const override;
 };

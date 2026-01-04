@@ -5,13 +5,14 @@
 #include <optional>
 #include <algorithm>
 
+
 VideoContext::VideoContext() {
 
     LOG_INFO("Creating Video Context");
     currentIndex = 0;
-    supportedFormats.insert({ _T("mp3"), _T("mp4")});
     volume = 100;
     isPlaying = false;
+    supportedFormats.insert({ _T("mp3"), _T("mp4")});  
 }
 
 VideoContext::~VideoContext() {

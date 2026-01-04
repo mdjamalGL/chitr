@@ -16,16 +16,15 @@
 class VideoPanel: public MediaPanel {
 
 protected:
-    virtual std::vector<CFile *> GetFilesInDirectory(const wxString& dirPath) override;
     virtual void init() override;
     virtual void setSizers() override;
     virtual void setBindings() override;
     virtual void setCursors() override;
     virtual void setToolTips() override;
+    virtual void OnWindowDestroy(wxWindowDestroyEvent& event) override;
+    virtual std::vector<wxAcceleratorEntry> getAcceleratorEntries() override;
 
 private:
-    void OnWindowDestroy(wxWindowDestroyEvent& event);
-    std::vector<wxAcceleratorEntry> getAcceleratorEntries();
     void uploadHandler(wxCommandEvent &event);
     void updateMediaPlayer(wxString videoFilePath);
     void mediaLoadedHandler(wxCommandEvent &event);
@@ -40,9 +39,6 @@ private:
     void alphaPressHandler(wxCommandEvent& event);
     void numPressHandler(wxCommandEvent& event);
     void keyPressHandler(wxCommandEvent& event);
-
-    template <typename EventType>
-    void dispatchEvent(void (VideoPanel::*handler)(EventType&), int id = wxID_ANY);
 
     wxMediaCtrl     *mediaPlayer;
     wxGauge         *volumeSlider;
@@ -61,7 +57,4 @@ private:
 public:
     VideoPanel(MainFrame *, wxNotebook *, std::shared_ptr<Resource>);
     ~VideoPanel();
-    wxPanel *getRootPanel() const override;
-    const std::vector<wxString> getStatusBarData() const override;
-    
 };

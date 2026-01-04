@@ -25,7 +25,11 @@ VideoPanel::VideoPanel(MainFrame *mFrame, wxNotebook *notebook, std::shared_ptr<
     try {
         rootPanel   = new wxPanel(notebook);
         assets      = (resourceAsset);
-        context     = new VideoContext();
+        
+        std::shared_ptr<VideoContext> sharedCtx = std::make_shared<VideoContext>();
+        setBaseContext(sharedCtx);
+        context = sharedCtx.get();
+
         mainFrame   = mFrame;
 
         init();
@@ -208,14 +212,6 @@ void VideoPanel::setToolTips() {
     volumeSlider->SetToolTip(std::to_string(context->getVolume()) + "%");
 }
 
-template <typename EventType>
-void VideoPanel::dispatchEvent(void (VideoPanel::*handler)(EventType&), int id)
-{
-    EventType event;
-    event.SetId(id);
-    (this->*handler)(event);
-}
-
 void VideoPanel::uploadHandler(wxCommandEvent &event) {
 
     LOG_INFO("Video Upload Handler Invoked");
@@ -379,28 +375,6 @@ void VideoPanel::seekHandler(wxMouseEvent& event) {
     }
 }
 
-std::vector<CFile *> VideoPanel::GetFilesInDirectory(const wxString &dirPath)
-{
-    std::vector<CFile *> fileList;
-    wxDir directory(dirPath);
-    if (directory.IsOpened()){
-
-        wxString filename;
-        bool hasFiles = directory.GetFirst(&filename, wxEmptyString, wxDIR_FILES);
-        while (hasFiles)
-        {
-            CFile *file = new CFile(dirPath, filename, wxPATH_NATIVE);
-            if(context->supportedFormats.count(file->getExt()) > 0) {
-                fileList.push_back(file);
-            }
-            hasFiles = directory.GetNext(&filename);
-        }
-    }
-    return fileList;
-}
-
-wxPanel *VideoPanel::getRootPanel() const { return rootPanel; }
-
 void VideoPanel::muteHandler(wxCommandEvent &event) {
 
     bool isSliderVisible = volumeSlider->IsShown();
@@ -463,8 +437,7 @@ void VideoPanel::keyPressHandler(wxCommandEvent& event) {
 
             break;
         }
-        case ID_SPACE:
-        case ID_ENTER: {
+        case ID_SPACE:{
             dispatchEvent(&VideoPanel::playPauseHandler);
             break;
         }
@@ -490,7 +463,7 @@ void VideoPanel::OnWindowDestroy(wxWindowDestroyEvent& event) {
     event.Skip();
 }
 
-const std::vector<wxString> VideoPanel::getStatusBarData() const { return context->getMetaData(); }
+
 
 
 
