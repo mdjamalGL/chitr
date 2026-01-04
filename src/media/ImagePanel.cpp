@@ -135,6 +135,7 @@ void ImagePanel::setBindings() {
 std::vector<wxAcceleratorEntry> ImagePanel::getAcceleratorEntries() {
 
     std::vector<wxAcceleratorEntry> entries;
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'O', ID_OFFSET_ALPHA + int('O' - 'A')));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_UP,   ID_ARROW_UP));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_DOWN, ID_ARROW_DOWN));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, WXK_LEFT, ID_ARROW_LEFT));
@@ -271,6 +272,10 @@ void ImagePanel::alphaPressHandler(wxCommandEvent& event) {
 
     char alphabetPressed = 'A' + (event.GetId() - ID_OFFSET_ALPHA);
     switch (alphabetPressed) {
+        case 'O': {
+            dispatchEvent(&ImagePanel::uploadHandler);
+            break;
+        }
         default: {
             LOG_INFO("Alphabet Key Event Raised : %c [Not Handled]", alphabetPressed);
             break;
@@ -289,19 +294,19 @@ void ImagePanel::keyPressHandler(wxCommandEvent& event) {
     int arrowId = event.GetId();
     switch (arrowId) {
         case ID_ARROW_UP: {
-
+            //zoom
             break;
         }
         case ID_ARROW_DOWN: {
-
+            //zoom
             break;
         }
         case ID_ARROW_LEFT: {
-
+            dispatchEvent(&ImagePanel::nextHandler);
             break;
         }
         case ID_ARROW_RIGHT: {
-
+            dispatchEvent(&ImagePanel::previousHandler);
             break;
         }
         case ID_SPACE: {

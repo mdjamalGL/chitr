@@ -34,6 +34,7 @@ private:
     void previousHandler(wxCommandEvent &event);
     void volumeHandler(wxMouseEvent& event);
     void seekHandler(wxMouseEvent& event);
+    void seekToValue(int value);
     void muteHandler(wxCommandEvent &event);
     void playbackLengthHandler(wxTimerEvent &event);
     void alphaPressHandler(wxCommandEvent& event);

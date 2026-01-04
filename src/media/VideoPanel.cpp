@@ -175,6 +175,9 @@ std::vector<wxAcceleratorEntry> VideoPanel::getAcceleratorEntries() {
     std::vector<wxAcceleratorEntry> entries;
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'M', ID_OFFSET_ALPHA + int('M' - 'A')));
     entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'O', ID_OFFSET_ALPHA + int('O' - 'A')));
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'J', ID_OFFSET_ALPHA + int('J' - 'A')));
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'K', ID_OFFSET_ALPHA + int('K' - 'A')));
+    entries.push_back(wxAcceleratorEntry(wxACCEL_NORMAL, 'L', ID_OFFSET_ALPHA + int('L' - 'A')));
 
     for (int i = 0; i <= 9; ++i) {
         int key = '0' + i; 
@@ -361,18 +364,22 @@ void VideoPanel::seekHandler(wxMouseEvent& event) {
         int width = playbackSlider->GetSize().GetWidth();
         int x = event.GetX();
         int value = (x * playbackSlider->GetRange()) / width;
-        
-        if (value < 0) value = 0;
-        if (value > playbackSlider->GetRange()) value = playbackSlider->GetRange();
-        
-        long long timeToSeek = (context->getTotalPlaybackTimeInMiliSecond() * value)/PLAYBACK_RANGE;
-
-        playbackSlider->SetValue(value);
-        mediaPlayer->Seek(timeToSeek);
-        
-        if(!context->getIsPlaying()) { dispatchEvent(&VideoPanel::playPauseHandler); }
-        LOG_INFO("Seek Handler Called for Time : %s", CTime::timeString(timeToSeek));
+        seekToValue(value);
     }
+}
+
+void VideoPanel::seekToValue(int value) {
+
+    if (value < 0) value = 0;
+    if (value > playbackSlider->GetRange()) value = playbackSlider->GetRange();
+    
+    long long timeToSeek = (context->getTotalPlaybackTimeInMiliSecond() * value)/PLAYBACK_RANGE;
+
+    playbackSlider->SetValue(value);
+    mediaPlayer->Seek(timeToSeek);
+    
+    if(!context->getIsPlaying()) { dispatchEvent(&VideoPanel::playPauseHandler); }
+    LOG_INFO("Seek To Time : %s", CTime::timeString(timeToSeek));
 }
 
 void VideoPanel::muteHandler(wxCommandEvent &event) {
@@ -400,6 +407,24 @@ void VideoPanel::alphaPressHandler(wxCommandEvent& event) {
             LOG_INFO("Alphabet Key Event Raised : M [Mute]");
             break;
         }
+        case 'J': {
+            int valueDecrement = (PLAYBACK_RANGE * 10000)/context->getTotalPlaybackTimeInMiliSecond();
+            seekToValue(playbackSlider->GetValue() - valueDecrement);
+            break;
+        }
+        case 'K': {
+            dispatchEvent(&VideoPanel::playPauseHandler);
+            break;
+        }
+        case 'L': {
+            int valueIncrement = (PLAYBACK_RANGE * 10000)/context->getTotalPlaybackTimeInMiliSecond();
+            seekToValue(playbackSlider->GetValue() + valueIncrement);
+            break;
+        }
+        case 'O': {
+            dispatchEvent(&VideoPanel::uploadHandler);
+            break;
+        }
         default: {
             LOG_INFO("Alphabet Key Event Raised : %c [Not Handled]", alphabetPressed);
             break;
@@ -412,9 +437,7 @@ void VideoPanel::numPressHandler(wxCommandEvent& event) {
     int numberPressed = event.GetId() - ID_OFFSET_NUM;
     LOG_INFO("Number Key Event Raised : %d", numberPressed);
     int value = PLAYBACK_RANGE * (static_cast<double>(numberPressed)*0.1);
-    long long timeToSeek = (context->getTotalPlaybackTimeInMiliSecond() * value)/PLAYBACK_RANGE;
-    playbackSlider->SetValue(value);
-    mediaPlayer->Seek(timeToSeek);
+    seekToValue(value);
 }
 
 void VideoPanel::keyPressHandler(wxCommandEvent& event) {
@@ -422,19 +445,33 @@ void VideoPanel::keyPressHandler(wxCommandEvent& event) {
     int arrowId = event.GetId();
     switch (arrowId) {
         case ID_ARROW_UP: {
-
+            int currentVolume = context->getVolume();
+            if (currentVolume != 100) {
+                context->setVolume(currentVolume + 1);
+                volumeSlider->SetValue(context->getVolume());
+                mediaPlayer->SetVolume(static_cast<double>(context->getVolume())/VOLUME_RANGE);
+            }
             break;
         }
         case ID_ARROW_DOWN: {
+            int currentVolume = context->getVolume();
+            if (currentVolume != 0) {
 
+                context->setVolume(currentVolume - 1);
+                volumeSlider->SetValue(context->getVolume());
+                mediaPlayer->SetVolume(static_cast<double>(context->getVolume())/VOLUME_RANGE);
+                if (context->getVolume() == 0) { dispatchEvent(&VideoPanel::muteHandler); }
+            }
             break;
         }
         case ID_ARROW_LEFT: {
-
+            int valueDecrement = (PLAYBACK_RANGE * 5000)/context->getTotalPlaybackTimeInMiliSecond();
+            seekToValue(playbackSlider->GetValue() - valueDecrement);
             break;
         }
         case ID_ARROW_RIGHT: {
-
+            int valueIncrement = (PLAYBACK_RANGE * 5000)/context->getTotalPlaybackTimeInMiliSecond();
+            seekToValue(playbackSlider->GetValue() + valueIncrement);
             break;
         }
         case ID_SPACE:{

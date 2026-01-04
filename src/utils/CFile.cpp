@@ -34,7 +34,7 @@ bool CFile::refresh(bool forceUpdate = false) {
 
     wxDateTime dt0, dt1, dt2;
     if (file.GetTimes(&dt0, &dt1, &dt2)) {
-        creationDateStr = dt2.FormatDate();
+        creationDateStr = dt2.FormatISODate();
         LOG_INFO("Creation Date Found : %s", dt2.FormatISODate());
     } else {
         creationDateStr = "";
