@@ -70,7 +70,12 @@ void VideoPanel::init() {
     
     visualPanel         = new wxPanel(rootPanel, wxID_ANY);
     controlPanel        = new wxPanel(rootPanel, wxID_ANY);
-    mediaPlayer         = new wxMediaCtrl(visualPanel, wxID_ANY);
+
+    #ifdef _WIN32
+        mediaPlayer     = new wxMediaCtrl(visualPanel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, wxMEDIABACKEND_WMP10);
+    #else
+        mediaPlayer     = new wxMediaCtrl(visualPanel, wxID_ANY);
+    #endif
 
     rootSizer                   = new wxBoxSizer(wxVERTICAL);
     visualSizer                 = new wxBoxSizer(wxHORIZONTAL);
@@ -78,13 +83,16 @@ void VideoPanel::init() {
     controlPanelButtonRowSizer  = new wxBoxSizer(wxHORIZONTAL);
     controlPanelPBSliderSizer   = new wxBoxSizer(wxHORIZONTAL);
 
+    int gaugeHeight = wxWindow::FromDIP(7, (wxWindow*)NULL); 
+    int gaugeWidth = wxWindow::FromDIP(70, (wxWindow*)NULL);
+
     uploadButton        = new wxButton(controlPanel, wxID_ANY, "Upload Video/Audio", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     playPauseButton     = new wxButton(controlPanel, wxID_ANY, "Play", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE); 
     previousButton      = new wxButton(controlPanel, wxID_ANY, "Previous Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     nextButton          = new wxButton(controlPanel, wxID_ANY, "Next Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
-    volumeSlider        = new wxGauge(controlPanel, wxID_ANY, VOLUME_RANGE, wxDefaultPosition, wxSize(70,2), wxGA_HORIZONTAL | wxGA_SMOOTH);
+    volumeSlider        = new wxGauge(controlPanel, wxID_ANY, VOLUME_RANGE, wxDefaultPosition, wxSize(gaugeWidth, gaugeHeight), wxGA_HORIZONTAL | wxGA_SMOOTH);
     volumeButton        = new wxButton(controlPanel, wxID_ANY, "Volume Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
-    playbackSlider      = new wxGauge(controlPanel, wxID_ANY, PLAYBACK_RANGE, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL | wxGA_SMOOTH);
+    playbackSlider      = new wxGauge(controlPanel, wxID_ANY, PLAYBACK_RANGE, wxDefaultPosition, wxSize(-1,gaugeHeight), wxGA_HORIZONTAL | wxGA_SMOOTH);
     playbackTimer       = new wxTimer();
     playbackTimeText    = new RoundedText(controlPanel, wxID_ANY, "00:00 / 00:00", assets->getSecondaryColour(), *wxWHITE, 20.0);
 
@@ -95,6 +103,15 @@ void VideoPanel::setSizers() {
 
     visualPanel->SetBackgroundColour(*wxBLACK);
     controlPanel->SetBackgroundColour(assets->getPrimaryColour());
+
+    #ifdef _WIN32
+        wxColour bgColour = assets->getPrimaryColour();
+        uploadButton->SetBackgroundColour(bgColour);
+        volumeButton->SetBackgroundColour(bgColour);
+        nextButton->SetBackgroundColour(bgColour);
+        previousButton->SetBackgroundColour(bgColour);
+        playPauseButton->SetBackgroundColour(bgColour);
+    #endif
 
     volumeButton->SetBitmap(assets->getVolumeIcon());
     uploadButton->SetBitmap(assets->getUploadIcon());
@@ -115,7 +132,7 @@ void VideoPanel::setSizers() {
     controlPanelButtonRowSizer->Add(nextButton, 0, wxCENTER | wxALL, 5);
     controlPanelButtonRowSizer->AddStretchSpacer(15);
     controlPanelButtonRowSizer->Add(volumeButton, 0, wxEXPAND | wxALL, 5);
-    controlPanelButtonRowSizer->Add(volumeSlider, 0, wxEXPAND | wxALL, 5);
+    controlPanelButtonRowSizer->Add(volumeSlider, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     controlPanelButtonRowSizer->AddStretchSpacer(1);
     
     controlPanelPBSliderSizer->AddStretchSpacer(1); 
@@ -256,9 +273,9 @@ void VideoPanel::updateMediaPlayer(wxString videoFilePath) {
 
 void VideoPanel::mediaLoadedHandler(wxCommandEvent &event) {
 
+    LOG_INFO("Video Loaded EVT");
     context->setTotalPlaybackTime((long long)mediaPlayer->Length());
     dispatchEvent(&VideoPanel::playPauseHandler);
-    playbackTimer->Start(30);
     try {
         if (mainFrame)
             mainFrame->setStatusBarText(getStatusBarData());
@@ -269,8 +286,16 @@ void VideoPanel::mediaLoadedHandler(wxCommandEvent &event) {
 
 void VideoPanel::mediaEndedHandler(wxCommandEvent &event) {
 
-    dispatchEvent(&VideoPanel::playPauseHandler);
-    playbackTimer->Stop();
+    LOG_INFO("Video Ended EVT");
+    #ifdef _WIN32
+        if (mediaPlayer->Tell() < context->getTotalPlaybackTimeInMiliSecond()) {
+            return;
+        } else if (mediaPlayer->Tell() == 0 && context->getIsPlaying()) {
+            dispatchEvent(&VideoPanel::playPauseHandler);
+        }
+    #else
+        dispatchEvent(&VideoPanel::playPauseHandler);
+    #endif
 }
 
 void VideoPanel::playPauseHandler(wxCommandEvent &event) {
@@ -285,11 +310,13 @@ void VideoPanel::playPauseHandler(wxCommandEvent &event) {
             dispatchEvent(&VideoPanel::uploadHandler);
         } 
         context->setIsPlaying(true);
+        LOG_INFO("Timer Start");
         playbackTimer->Start(30);
         playPauseButton->SetBitmap(assets->getPauseIcon());
     } else {
         mediaPlayer->Pause();
         context->setIsPlaying(false);
+        LOG_INFO("Timer Stopped");
         playbackTimer->Stop();
         playPauseButton->SetBitmap(assets->getPlayIcon());
     }
@@ -377,6 +404,7 @@ void VideoPanel::seekToValue(int value) {
 
     playbackSlider->SetValue(value);
     mediaPlayer->Seek(timeToSeek);
+    mediaPlayer->Play();
     
     if(!context->getIsPlaying()) { dispatchEvent(&VideoPanel::playPauseHandler); }
     LOG_INFO("Seek To Time : %s", CTime::timeString(timeToSeek));
