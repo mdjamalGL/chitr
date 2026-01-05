@@ -78,6 +78,14 @@ void ImagePanel::setSizers() {
     controlPanel->SetBackgroundColour(assets->getPrimaryColour());
     visualPanel->SetBackgroundColour(assets->getPrimaryColour());
 
+    #ifdef _WIN32
+        wxColour bgColour = assets->getPrimaryColour();
+        uploadButton->SetBackgroundColour(bgColour);
+        nextButton->SetBackgroundColour(bgColour);
+        previousButton->SetBackgroundColour(bgColour);
+        slideShowButton->SetBackgroundColour(bgColour);
+    #endif
+
     uploadButton->SetBitmap(assets->getUploadIcon());
     nextButton->SetBitmap(assets->getNextIcon());
     previousButton->SetBitmap(assets->getPreviousIcon());
@@ -214,7 +222,7 @@ void ImagePanel::updateImageViewer(wxString imageFilePath) {
     }
     renderImage();
     visualPanel->Thaw();
-    
+
     mainFrame->setStatusBarText(getStatusBarData());
     LOG_INFO("Updated Media Player with %s", imageFilePath);
 }

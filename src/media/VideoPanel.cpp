@@ -83,13 +83,16 @@ void VideoPanel::init() {
     controlPanelButtonRowSizer  = new wxBoxSizer(wxHORIZONTAL);
     controlPanelPBSliderSizer   = new wxBoxSizer(wxHORIZONTAL);
 
+    int gaugeHeight = wxWindow::FromDIP(7, (wxWindow*)NULL); 
+    int gaugeWidth = wxWindow::FromDIP(70, (wxWindow*)NULL);
+
     uploadButton        = new wxButton(controlPanel, wxID_ANY, "Upload Video/Audio", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     playPauseButton     = new wxButton(controlPanel, wxID_ANY, "Play", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE); 
     previousButton      = new wxButton(controlPanel, wxID_ANY, "Previous Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
     nextButton          = new wxButton(controlPanel, wxID_ANY, "Next Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
-    volumeSlider        = new wxGauge(controlPanel, wxID_ANY, VOLUME_RANGE, wxDefaultPosition, wxSize(70,2), wxGA_HORIZONTAL | wxGA_SMOOTH);
+    volumeSlider        = new wxGauge(controlPanel, wxID_ANY, VOLUME_RANGE, wxDefaultPosition, wxSize(gaugeWidth, gaugeHeight), wxGA_HORIZONTAL | wxGA_SMOOTH);
     volumeButton        = new wxButton(controlPanel, wxID_ANY, "Volume Video", wxDefaultPosition, wxSize(-1, -1), wxBU_EXACTFIT | wxBU_NOTEXT | wxBORDER_NONE);
-    playbackSlider      = new wxGauge(controlPanel, wxID_ANY, PLAYBACK_RANGE, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL | wxGA_SMOOTH);
+    playbackSlider      = new wxGauge(controlPanel, wxID_ANY, PLAYBACK_RANGE, wxDefaultPosition, wxSize(-1,gaugeHeight), wxGA_HORIZONTAL | wxGA_SMOOTH);
     playbackTimer       = new wxTimer();
     playbackTimeText    = new RoundedText(controlPanel, wxID_ANY, "00:00 / 00:00", assets->getSecondaryColour(), *wxWHITE, 20.0);
 
@@ -100,6 +103,15 @@ void VideoPanel::setSizers() {
 
     visualPanel->SetBackgroundColour(*wxBLACK);
     controlPanel->SetBackgroundColour(assets->getPrimaryColour());
+
+    #ifdef _WIN32
+        wxColour bgColour = assets->getPrimaryColour();
+        uploadButton->SetBackgroundColour(bgColour);
+        volumeButton->SetBackgroundColour(bgColour);
+        nextButton->SetBackgroundColour(bgColour);
+        previousButton->SetBackgroundColour(bgColour);
+        playPauseButton->SetBackgroundColour(bgColour);
+    #endif
 
     volumeButton->SetBitmap(assets->getVolumeIcon());
     uploadButton->SetBitmap(assets->getUploadIcon());
@@ -120,7 +132,7 @@ void VideoPanel::setSizers() {
     controlPanelButtonRowSizer->Add(nextButton, 0, wxCENTER | wxALL, 5);
     controlPanelButtonRowSizer->AddStretchSpacer(15);
     controlPanelButtonRowSizer->Add(volumeButton, 0, wxEXPAND | wxALL, 5);
-    controlPanelButtonRowSizer->Add(volumeSlider, 0, wxEXPAND | wxALL, 5);
+    controlPanelButtonRowSizer->Add(volumeSlider, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     controlPanelButtonRowSizer->AddStretchSpacer(1);
     
     controlPanelPBSliderSizer->AddStretchSpacer(1); 
